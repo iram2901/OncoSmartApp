@@ -52,7 +52,10 @@ def ask_openai_for_chart(df, user_query):
 # Function to execute the code and generate the chart
 def execute_chart_code(code, df):
     try:
+        # Execute the code, passing necessary modules and objects
         exec(code, {'df': df, 'plt': plt, 'sns': sns, 'pd': pd})
+        st.pyplot(plt)  # Display the chart
+        plt.clf()  # Clear the plot to avoid overlap
     except Exception as e:
         st.error(f"An error occurred while generating the chart: {e}")
 
@@ -84,7 +87,6 @@ try:
 
             # Execute the chart code
             execute_chart_code(chart_code_modified, df)
-            st.pyplot(plt)  # Display the chart
 
 except FileNotFoundError:
     st.error(f"File not found: {file_path}")
