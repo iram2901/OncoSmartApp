@@ -67,7 +67,7 @@ def clean_generated_code(code_str):
     return clean_code
 
 # Hardcoded file path
-file_path = "C:\\Users\\iramc\\Downloads\\Deployment\\patient_dataset.xlsx"
+file_path = "patient_dataset.xlsx"
 
 try:
     # Load and display the data
