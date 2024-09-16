@@ -1,5 +1,6 @@
+openai
 pandas
 matplotlib
 seaborn
-openai
 streamlit
+openpyxl
