@@ -17,7 +17,7 @@ st.title('AI Powered - OncoSmart Insights')
 # File uploader widget
 uploaded_file = st.file_uploader("Choose a file", type=["xlsx", "csv"])
 
-# Function to read the file based on type
+# Function to read the file based on type and convert columns to lowercase
 def load_data(file):
     if file is not None:
         file_type = file.name.split('.')[-1]
@@ -28,21 +28,22 @@ def load_data(file):
         else:
             st.error("Unsupported file type")
             return None
+        
+        # Clean column names and data
+        df.columns = [col.strip().lower() for col in df.columns]
+        for col in df.columns:
+            if df[col].dtype == object:
+                df[col] = df[col].str.lower()
         return df
     else:
         return None
-
-# Function to clean column names
-def clean_column_names(df):
-    df.columns = [col.strip().lower() for col in df.columns]
-    return df
 
 # Function to ask OpenAI for chart instructions
 def ask_openai_for_chart(df, user_query):
     data_preview = df.head().to_string()
 
     prompt = f"""
-    I have the following data from an Excel file (all column names are in lowercase):
+    I have the following data from a file (all column names and data are in lowercase):
     {data_preview}
 
     User query: {user_query}
@@ -70,6 +71,9 @@ def ask_openai_for_chart(df, user_query):
 
 # Function to clean up the generated code
 def clean_generated_code(code_str):
+    # Replace occurrences of 'dataframe' with 'df'
+    code_str = re.sub(r'\bdataframe\b', 'df', code_str)
+
     # Remove irrelevant parts of the code
     code_after_import = re.sub(r"^.*?(import pandas)", r"\1", code_str, flags=re.DOTALL)
     clean_code = re.sub(r"(plt\.show\(\)).*", r"\1", code_after_import, flags=re.DOTALL)
@@ -86,14 +90,6 @@ def execute_chart_code(code, df):
         st.write("Generated Code for Review:")
         st.code(code)
 
-        # Convert DataFrame columns to
-        # arrays if the code is for a line chart or other plot type
-        if "lineplot" in code or "plot(kind='line')" in code or "plot(" in code:
-            x_col = re.findall(r'filtered_df\[[\'\"](.*?)[\'\"]\]', code)  # Extract column names from the code
-            for col in x_col:
-                if col in df.columns:
-                    df[col] = df[col].to_numpy()
-
         # Execute the code
         exec(code, {'df': df, 'plt': plt, 'sns': sns, 'pd': pd})
     except SyntaxError as e:
@@ -108,7 +104,6 @@ if uploaded_file:
         # Load and clean the data
         df = load_data(uploaded_file)
         if df is not None:
-            df = clean_column_names(df)
             st.write("Data Preview (Top 5 Rows):")
             st.write(df.head())  # Display the top 5 rows
 
