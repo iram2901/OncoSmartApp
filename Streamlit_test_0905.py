@@ -87,8 +87,8 @@ def clean_generated_code(code_str):
 def execute_chart_code(code, df):
     try:
         # Display the generated code for debugging purposes
-        st.write("Generated Code for Review:")
-        st.code(code)
+        #st.write("Generated Code for Review:")
+        #st.code(code)
 
         # Execute the code
         exec(code, {'df': df, 'plt': plt, 'sns': sns, 'pd': pd})
