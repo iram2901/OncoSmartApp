@@ -6,6 +6,7 @@ import seaborn as sns
 import re
 import streamlit as st
 from openai.error import RateLimitError
+from io import BytesIO
 
 # Initialize OpenAI API
 openai.api_key = os.getenv('OPENAI_API_KEY')  # Ensure API key is set up in the environment
@@ -13,10 +14,23 @@ openai.api_key = os.getenv('OPENAI_API_KEY')  # Ensure API key is set up in the 
 # Streamlit app
 st.title('AI Powered - OncoSmart Insights')
 
-# Function to read the Excel file
-def load_excel_data(file_path):
-    df = pd.read_excel(file_path)
-    return df
+# File uploader widget
+uploaded_file = st.file_uploader("Choose a file", type=["xlsx", "csv"])
+
+# Function to read the file based on type
+def load_data(file):
+    if file is not None:
+        file_type = file.name.split('.')[-1]
+        if file_type == 'xlsx':
+            df = pd.read_excel(file)
+        elif file_type == 'csv':
+            df = pd.read_csv(file)
+        else:
+            st.error("Unsupported file type")
+            return None
+        return df
+    else:
+        return None
 
 # Function to clean column names
 def clean_column_names(df):
@@ -89,31 +103,28 @@ def execute_chart_code(code, df):
     except Exception as e:
         st.error(f"An error occurred while generating the chart: {e}")
 
-# Hardcoded file path
-file_path = "patient_dataset.xlsx"
+if uploaded_file:
+    try:
+        # Load and clean the data
+        df = load_data(uploaded_file)
+        if df is not None:
+            df = clean_column_names(df)
+            st.write("Data Preview (Top 5 Rows):")
+            st.write(df.head())  # Display the top 5 rows
 
-try:
-    # Load and clean the data
-    df = load_excel_data(file_path)
-    df = clean_column_names(df)
-    st.write("Data Preview (Top 5 Rows):")
-    st.write(df.head())  # Display the top 5 rows
+            # User input for chart query
+            user_query = st.text_input("Enter your chart query:")
 
-    # User input for chart query
-    user_query = st.text_input("Enter your chart query:")
+            if user_query:
+                # Generate chart code based on query
+                chart_code = ask_openai_for_chart(df, user_query)
+                if chart_code:
+                    # Clean up the generated code
+                    chart_code_modified = clean_generated_code(chart_code)
 
-    if user_query:
-        # Generate chart code based on query
-        chart_code = ask_openai_for_chart(df, user_query)
-        if chart_code:
-            # Clean up the generated code
-            chart_code_modified = clean_generated_code(chart_code)
+                    # Execute the chart code
+                    execute_chart_code(chart_code_modified, df)
+                    st.pyplot(plt)  # Display the chart
 
-            # Execute the chart code
-            execute_chart_code(chart_code_modified, df)
-            st.pyplot(plt)  # Display the chart
-
-except FileNotFoundError:
-    st.error(f"File not found: {file_path}")
-except Exception as e:
-    st.error(f"An error occurred: {e}")
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
