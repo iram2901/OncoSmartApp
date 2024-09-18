@@ -45,6 +45,9 @@ def merge_datasets(dfs, left_key, right_key):
     if len(dfs) > 1:
         merged_df = dfs[0]  # Start with the first dataframe
         for df in dfs[1:]:
+            if left_key not in merged_df.columns or right_key not in df.columns:
+                st.error(f"Key columns '{left_key}' or '{right_key}' not found in the datasets.")
+                return None
             # Merge with the next dataframe on the specified keys
             merged_df = pd.merge(merged_df, df, left_on=left_key, right_on=right_key, how='inner')  # Using 'inner' join to find matches
         return merged_df
@@ -116,30 +119,38 @@ if uploaded_files:
     try:
         # Load and clean the data
         dfs = load_data(uploaded_files)
-        if dfs and len(dfs) > 1:
-            # Specify the key columns for merging (e.g., 'patient id')
-            left_key = st.text_input(f"Enter the column name to use as the key for merging in the first dataset:", value="patient id")
-            right_key = st.text_input(f"Enter the column name to use as the key for merging in the second dataset:", value="patient id")
+        if dfs:
+            # Display the preview of each uploaded file
+            for i, df in enumerate(dfs):
+                st.write(f"Data Preview for File {i+1} (Top 5 Rows):")
+                st.write(df.head())
             
-            if left_key and right_key:
-                # Merge the datasets on the specified keys
-                merged_df = merge_datasets(dfs, left_key, right_key)
-                st.write("Merged Data Preview (Top 5 Rows):")
-                st.write(merged_df.head())  # Display the top 5 rows of the merged dataset
+            if len(dfs) > 1:
+                # Specify the key columns for merging (e.g., 'patient id')
+                left_key = st.text_input(f"Enter the column name to use as the key for merging in the first dataset:", value="patient id")
+                right_key = st.text_input(f"Enter the column name to use as the key for merging in the second dataset:", value="patient id")
+                
+                if left_key and right_key:
+                    # Merge the datasets on the specified keys
+                    merged_df = merge_datasets(dfs, left_key, right_key)
+                    
+                    if merged_df is not None:
+                        st.write("Merged Data Preview (Top 5 Rows):")
+                        st.write(merged_df.head())  # Display the top 5 rows of the merged dataset
 
-                # User input for chart query
-                user_query = st.text_input("Enter your chart query:")
+                        # User input for chart query
+                        user_query = st.text_input("Enter your chart query:")
 
-                if user_query:
-                    # Generate chart code based on query
-                    chart_code = ask_openai_for_chart(merged_df, user_query)
-                    if chart_code:
-                        # Clean up the generated code
-                        chart_code_modified = clean_generated_code(chart_code)
+                        if user_query:
+                            # Generate chart code based on query
+                            chart_code = ask_openai_for_chart(merged_df, user_query)
+                            if chart_code:
+                                # Clean up the generated code
+                                chart_code_modified = clean_generated_code(chart_code)
 
-                        # Execute the chart code
-                        execute_chart_code(chart_code_modified, merged_df)
-                        st.pyplot(plt)  # Display the chart
+                                # Execute the chart code
+                                execute_chart_code(chart_code_modified, merged_df)
+                                st.pyplot(plt)  # Display the chart
 
     except Exception as e:
         st.error(f"An error occurred: {e}")
