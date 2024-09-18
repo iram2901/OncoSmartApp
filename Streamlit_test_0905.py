@@ -7,6 +7,7 @@ import re
 import streamlit as st
 from openai.error import RateLimitError
 from io import BytesIO
+import pdfplumber  # Add this import to handle PDF files
 
 # Initialize OpenAI API
 openai.api_key = os.getenv('OPENAI_API_KEY')  # Ensure API key is set up in the environment
@@ -14,8 +15,8 @@ openai.api_key = os.getenv('OPENAI_API_KEY')  # Ensure API key is set up in the 
 # Streamlit app
 st.title('AI Powered - OncoSmart Insights')
 
-# File uploader widget for multiple files
-uploaded_files = st.file_uploader("Choose one or more files", type=["xlsx", "csv"], accept_multiple_files=True)
+# File uploader widget for multiple files (now includes PDF files)
+uploaded_files = st.file_uploader("Choose one or more files", type=["xlsx", "csv", "pdf"], accept_multiple_files=True)
 
 # Function to read the file based on type and convert columns to lowercase
 def load_data(files):
@@ -26,6 +27,25 @@ def load_data(files):
             df = pd.read_excel(file)
         elif file_type == 'csv':
             df = pd.read_csv(file)
+        elif file_type == 'pdf':
+            try:
+                # Extract tables from PDF using pdfplumber
+                with pdfplumber.open(file) as pdf:
+                    pdf_dfs = []
+                    for page in pdf.pages:
+                        # Extract table from each page and convert to DataFrame
+                        table = page.extract_table()
+                        if table:
+                            page_df = pd.DataFrame(table[1:], columns=table[0])  # First row as headers
+                            pdf_dfs.append(page_df)
+                    if pdf_dfs:
+                        df = pd.concat(pdf_dfs, ignore_index=True)
+                    else:
+                        st.error(f"No tables found in the PDF: {file.name}")
+                        continue
+            except Exception as e:
+                st.error(f"Error reading PDF file: {file.name}. {e}")
+                continue
         else:
             st.error(f"Unsupported file type: {file.name}")
             continue
