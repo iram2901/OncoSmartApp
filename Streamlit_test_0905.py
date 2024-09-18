@@ -14,27 +14,34 @@ openai.api_key = os.getenv('OPENAI_API_KEY')  # Ensure API key is set up in the 
 # Streamlit app
 st.title('AI Powered - OncoSmart Insights')
 
-# File uploader widget
-uploaded_file = st.file_uploader("Choose a file", type=["xlsx", "csv"])
+# File uploader widget for multiple files
+uploaded_files = st.file_uploader("Choose one or more files", type=["xlsx", "csv"], accept_multiple_files=True)
 
 # Function to read the file based on type and convert columns to lowercase
-def load_data(file):
-    if file is not None:
+def load_data(files):
+    dfs = []  # List to store dataframes
+    for file in files:
         file_type = file.name.split('.')[-1]
         if file_type == 'xlsx':
             df = pd.read_excel(file)
         elif file_type == 'csv':
             df = pd.read_csv(file)
         else:
-            st.error("Unsupported file type")
-            return None
+            st.error(f"Unsupported file type: {file.name}")
+            continue
         
         # Clean column names and data
         df.columns = [col.strip().lower() for col in df.columns]
         for col in df.columns:
             if df[col].dtype == object:
                 df[col] = df[col].str.lower()
-        return df
+        
+        dfs.append(df)
+    
+    # Concatenate all dataframes into a single dataframe
+    if dfs:
+        combined_df = pd.concat(dfs, ignore_index=True)
+        return combined_df
     else:
         return None
 
@@ -87,8 +94,8 @@ def clean_generated_code(code_str):
 def execute_chart_code(code, df):
     try:
         # Display the generated code for debugging purposes
-        #st.write("Generated Code for Review:")
-        #st.code(code)
+        # st.write("Generated Code for Review:")
+        # st.code(code)
 
         # Execute the code
         exec(code, {'df': df, 'plt': plt, 'sns': sns, 'pd': pd})
@@ -99,10 +106,10 @@ def execute_chart_code(code, df):
     except Exception as e:
         st.error(f"An error occurred while generating the chart: {e}")
 
-if uploaded_file:
+if uploaded_files:
     try:
         # Load and clean the data
-        df = load_data(uploaded_file)
+        df = load_data(uploaded_files)
         if df is not None:
             st.write("Data Preview (Top 5 Rows):")
             st.write(df.head())  # Display the top 5 rows
