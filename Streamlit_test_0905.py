@@ -126,10 +126,11 @@ if uploaded_files:
                 st.write(df.head())
             
             if len(dfs) > 1:
-                # Specify the key columns for merging (e.g., 'patient id')
-                left_key = st.text_input(f"Enter the column name to use as the key for merging in the first dataset:", value="patient id")
-                right_key = st.text_input(f"Enter the column name to use as the key for merging in the second dataset:", value="patient id")
+                # Specify the key columns for merging (without auto-populating default values)
+                left_key = st.text_input(f"Enter the column name to use as the key for merging in the first dataset:")
+                right_key = st.text_input(f"Enter the column name to use as the key for merging in the second dataset:")
                 
+                # Ensure both keys are entered before attempting to merge
                 if left_key and right_key:
                     # Merge the datasets on the specified keys
                     merged_df = merge_datasets(dfs, left_key, right_key)
