@@ -15,7 +15,7 @@ openai.api_key = os.getenv('OPENAI_API_KEY')  # Ensure API key is set up in the 
 st.title('AI Powered - OncoSmart Insights')
 
 # File uploader widget
-uploaded_file = st.file_uploader("Choose a file", type=["xlsx", "csv"], accept_multiple_files = True)
+uploaded_file = st.file_uploader("Choose a file", type=["xlsx", "csv"])
 
 # Function to read the file based on type and convert columns to lowercase
 def load_data(file):
