@@ -13,10 +13,23 @@ import pdfplumber  # Add this import to handle PDF files
 openai.api_key = os.getenv('OPENAI_API_KEY')  # Ensure API key is set up in the environment
 
 # Streamlit app
-st.title('AI Powered - OncoSmart Insights')
+st.title('AI Powered - AI Powered - OncoSmart Insights')
 
 # File uploader widget for multiple files (now includes PDF files)
 uploaded_files = st.file_uploader("Choose one or more files", type=["xlsx", "csv", "pdf"], accept_multiple_files=True)
+
+# Helper function to ensure unique column names
+def make_unique_column_names(columns):
+    seen = {}
+    unique_columns = []
+    for col in columns:
+        if col in seen:
+            seen[col] += 1
+            unique_columns.append(f"{col}_{seen[col]}")
+        else:
+            seen[col] = 0
+            unique_columns.append(col)
+    return unique_columns
 
 # Function to read the file based on type and convert columns to lowercase
 def load_data(files):
@@ -53,7 +66,7 @@ def load_data(files):
         
         # Clean column names and data
         df.columns = [col.strip().lower() for col in df.columns]
-        df.columns = pd.io.parsers.ParserBase({'names': df.columns})._maybe_dedup_names(df.columns)  # Make column names unique
+        df.columns = make_unique_column_names(df.columns)  # Ensure column names are unique
         for col in df.columns:
             if df[col].dtype == object:
                 df[col] = df[col].str.lower()
