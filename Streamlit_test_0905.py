@@ -40,13 +40,13 @@ def load_data(files):
     
     return dfs  # Return the list of dataframes
 
-# Function to merge the datasets on a common key
-def merge_datasets(dfs, key_column):
+# Function to merge the datasets on different key columns
+def merge_datasets(dfs, left_key, right_key):
     if len(dfs) > 1:
         merged_df = dfs[0]  # Start with the first dataframe
         for df in dfs[1:]:
-            # Merge with the next dataframe on the specified key
-            merged_df = pd.merge(merged_df, df, on=key_column, how='inner')  # Using 'inner' join to find matches
+            # Merge with the next dataframe on the specified keys
+            merged_df = pd.merge(merged_df, df, left_on=left_key, right_on=right_key, how='inner')  # Using 'inner' join to find matches
         return merged_df
     else:
         return dfs[0]  # If there's only one dataframe, return it as is
@@ -116,13 +116,14 @@ if uploaded_files:
     try:
         # Load and clean the data
         dfs = load_data(uploaded_files)
-        if dfs:
-            # Specify the common key column for merging (e.g., 'patient id')
-            key_column = st.text_input("Enter the column name to use as the key for merging:", value="patient id")
+        if dfs and len(dfs) > 1:
+            # Specify the key columns for merging (e.g., 'patient id')
+            left_key = st.text_input(f"Enter the column name to use as the key for merging in the first dataset:", value="patient id")
+            right_key = st.text_input(f"Enter the column name to use as the key for merging in the second dataset:", value="patient id")
             
-            if key_column:
-                # Merge the datasets on the specified key
-                merged_df = merge_datasets(dfs, key_column)
+            if left_key and right_key:
+                # Merge the datasets on the specified keys
+                merged_df = merge_datasets(dfs, left_key, right_key)
                 st.write("Merged Data Preview (Top 5 Rows):")
                 st.write(merged_df.head())  # Display the top 5 rows of the merged dataset
 
