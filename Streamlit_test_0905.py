@@ -33,10 +33,11 @@ def load_data(files):
                 with pdfplumber.open(file) as pdf:
                     pdf_dfs = []
                     for page in pdf.pages:
-                        # Extract table from each page and convert to DataFrame
+                        # Extract table from each page
                         table = page.extract_table()
                         if table:
-                            page_df = pd.DataFrame(table[1:], columns=table[0])  # First row as headers
+                            # Create a DataFrame, handle case where headers might be missing or duplicated
+                            page_df = pd.DataFrame(table[1:], columns=[f"column_{i}" if not col or col.isspace() else col for i, col in enumerate(table[0])])
                             pdf_dfs.append(page_df)
                     if pdf_dfs:
                         df = pd.concat(pdf_dfs, ignore_index=True)
@@ -52,6 +53,7 @@ def load_data(files):
         
         # Clean column names and data
         df.columns = [col.strip().lower() for col in df.columns]
+        df.columns = pd.io.parsers.ParserBase({'names': df.columns})._maybe_dedup_names(df.columns)  # Make column names unique
         for col in df.columns:
             if df[col].dtype == object:
                 df[col] = df[col].str.lower()
@@ -147,33 +149,4 @@ if uploaded_files:
             
             if len(dfs) > 1:
                 # Specify the key columns for merging (without auto-populating default values)
-                left_key = st.text_input("Enter the column name to use as the key for merging in the first dataset:")
-                right_key = st.text_input("Enter the column name to use as the key for merging in the second dataset:")
-                
-                # Add a submit button
-                if st.button('Submit'):
-                    # Ensure both keys are entered before attempting to merge
-                    if left_key and right_key:
-                        # Merge the datasets on the specified keys
-                        merged_df = merge_datasets(dfs, left_key, right_key)
-                        
-                        if merged_df is not None:
-                            st.write("Merged Data Preview (Top 5 Rows):")
-                            st.write(merged_df.head())  # Display the top 5 rows of the merged dataset
-
-                            # User input for chart query
-                            user_query = st.text_input("Enter your chart query:")
-
-                            if user_query:
-                                # Generate chart code based on query
-                                chart_code = ask_openai_for_chart(merged_df, user_query)
-                                if chart_code:
-                                    # Clean up the generated code
-                                    chart_code_modified = clean_generated_code(chart_code)
-
-                                    # Execute the chart code
-                                    execute_chart_code(chart_code_modified, merged_df)
-                                    st.pyplot(plt)  # Display the chart
-
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
+                left_key = st.text_input("Enter th
