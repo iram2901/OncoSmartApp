@@ -38,12 +38,18 @@ def load_data(files):
         
         dfs.append(df)
     
-    # Concatenate all dataframes into a single dataframe
-    if dfs:
-        combined_df = pd.concat(dfs, ignore_index=True, sort=False).fillna('')  # Use sort=False to align columns
-        return combined_df
+    return dfs  # Return the list of dataframes
+
+# Function to merge the datasets on a common key
+def merge_datasets(dfs, key_column):
+    if len(dfs) > 1:
+        merged_df = dfs[0]  # Start with the first dataframe
+        for df in dfs[1:]:
+            # Merge with the next dataframe on the specified key
+            merged_df = pd.merge(merged_df, df, on=key_column, how='inner')  # Using 'inner' join to find matches
+        return merged_df
     else:
-        return None
+        return dfs[0]  # If there's only one dataframe, return it as is
 
 # Function to ask OpenAI for chart instructions
 def ask_openai_for_chart(df, user_query):
@@ -109,24 +115,30 @@ def execute_chart_code(code, df):
 if uploaded_files:
     try:
         # Load and clean the data
-        df = load_data(uploaded_files)
-        if df is not None:
-            st.write("Data Preview (Top 5 Rows):")
-            st.write(df.head())  # Display the top 5 rows
+        dfs = load_data(uploaded_files)
+        if dfs:
+            # Specify the common key column for merging (e.g., 'patient id')
+            key_column = st.text_input("Enter the column name to use as the key for merging:", value="patient id")
+            
+            if key_column:
+                # Merge the datasets on the specified key
+                merged_df = merge_datasets(dfs, key_column)
+                st.write("Merged Data Preview (Top 5 Rows):")
+                st.write(merged_df.head())  # Display the top 5 rows of the merged dataset
 
-            # User input for chart query
-            user_query = st.text_input("Enter your chart query:")
+                # User input for chart query
+                user_query = st.text_input("Enter your chart query:")
 
-            if user_query:
-                # Generate chart code based on query
-                chart_code = ask_openai_for_chart(df, user_query)
-                if chart_code:
-                    # Clean up the generated code
-                    chart_code_modified = clean_generated_code(chart_code)
+                if user_query:
+                    # Generate chart code based on query
+                    chart_code = ask_openai_for_chart(merged_df, user_query)
+                    if chart_code:
+                        # Clean up the generated code
+                        chart_code_modified = clean_generated_code(chart_code)
 
-                    # Execute the chart code
-                    execute_chart_code(chart_code_modified, df)
-                    st.pyplot(plt)  # Display the chart
+                        # Execute the chart code
+                        execute_chart_code(chart_code_modified, merged_df)
+                        st.pyplot(plt)  # Display the chart
 
     except Exception as e:
         st.error(f"An error occurred: {e}")
