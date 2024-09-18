@@ -40,7 +40,7 @@ def load_data(files):
     
     # Concatenate all dataframes into a single dataframe
     if dfs:
-        combined_df = pd.concat(dfs, ignore_index=True)
+        combined_df = pd.concat(dfs, ignore_index=True, sort=False).fillna('')  # Use sort=False to align columns
         return combined_df
     else:
         return None
