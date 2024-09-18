@@ -13,7 +13,7 @@ import pdfplumber  # Add this import to handle PDF files
 openai.api_key = os.getenv('OPENAI_API_KEY')  # Ensure API key is set up in the environment
 
 # Streamlit app
-st.title('AI Powered - AI Powered - OncoSmart Insights')
+st.title('AI Powered - OncoSmart Insights')
 
 # File uploader widget for multiple files (now includes PDF files)
 uploaded_files = st.file_uploader("Choose one or more files", type=["xlsx", "csv", "pdf"], accept_multiple_files=True)
