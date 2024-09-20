@@ -90,9 +90,9 @@ def clean_generated_code(code_str):
 # Function to execute the code and generate the chart
 def execute_chart_code(code, df):
     try:
-        # Display the generated code for debugging purposes
-        # st.write("Generated Code for Review:")
-        # st.code(code)
+         Display the generated code for debugging purposes
+         st.write("Generated Code for Review:")
+         st.code(code)
 
         # Execute the code
         exec(code, {'df': df, 'plt': plt, 'sns': sns, 'pd': pd})
