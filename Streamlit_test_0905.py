@@ -10,8 +10,7 @@ from io import BytesIO
 import pdfplumber  # Add this import to handle PDF files
 
 # Initialize OpenAI API
-# openai.api_key = os.getenv('OPENAI_API_KEY')  # Ensure API key is set up in the environment
-openai.api_key = "sk-2dbGpAyTWGeRua5ch3goaFtlL5ucr33-acKHy3KFIVT3BlbkFJa46vi44x74fiA8lvg-jeJeQ6zAEZv78fenZNNBQH0A"
+openai.api_key = os.getenv('OPENAI_API_KEY')  # Ensure API key is set up in the environment
 
 # Streamlit app
 st.title('AI Powered - OncoSmart Insights')
