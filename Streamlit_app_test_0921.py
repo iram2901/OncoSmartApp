@@ -98,6 +98,7 @@ def execute_chart_code(code, df):
             clean_code = clean_code[start_index:]
 
         exec(clean_code, {"df": df})
+        plt.grid(False) # Removing grid lines from chart
         if plt.get_fignums():
             st.pyplot(plt.gcf())
 
