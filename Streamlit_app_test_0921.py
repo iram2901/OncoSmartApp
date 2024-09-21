@@ -68,11 +68,11 @@ def ask_openai_for_chart(df, user_query):
     full_prompt = prompt + additional_instructions
 
     try:
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": full_prompt}]
         )
-        code = response.choices[0].message['content']
+        code = response.choices[0].message.content
         return code
 
     except RateLimitError:
