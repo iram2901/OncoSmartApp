@@ -105,7 +105,7 @@ def execute_chart_code(code, df):
         st.error(f"An error occurred while generating the chart: {e}")
 
 # Streamlit UI components
-st.title("AI-Generated Charts with OpenAI and Streamlit")
+st.title("AI Powered - OncoSmart Insights")
 
 # File upload for user
 uploaded_file = st.file_uploader("Upload your dataset (Excel or CSV)", type=['csv', 'xlsx'])
@@ -121,11 +121,14 @@ if uploaded_file:
         # Input for user query
         user_query = st.text_input("Enter your chart query")
 
-        # Generate chart based on query
-        if user_query:
-            chart_code = ask_openai_for_chart(df, user_query)
-            if chart_code:
-                chart_code_clean = clean_generated_code(chart_code)
+        # Add a button to generate the chart
+        if st.button("Generate Chart"):
+            if user_query:
+                chart_code = ask_openai_for_chart(df, user_query)
+                if chart_code:
+                    chart_code_clean = clean_generated_code(chart_code)
 
-                # Execute the chart without displaying the raw code
-                execute_chart_code(chart_code_clean, df)
+                    # Execute the chart without displaying the raw code
+                    execute_chart_code(chart_code_clean, df)
+            else:
+                st.warning("Please enter a chart query before generating the chart.")
