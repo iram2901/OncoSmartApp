@@ -10,7 +10,6 @@ from openai import RateLimitError, OpenAIError
 # Initialize OpenAI API
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
-
 # Streamlit app begins here
 
 # Function to read the file based on type and convert columns to lowercase
@@ -30,17 +29,13 @@ def load_data(file):
         if df[col].dtype == object:
             df[col] = df[col].str.lower()
 
-    # Dynamically check and convert all potential date columns to datetime format
+    # Dynamically check and convert all potential date columns to datetime format silently
     for col in df.columns:
         if 'date' in col:  # If 'date' is part of the column name, it could be a date
-            if pd.api.types.is_datetime64_any_dtype(df[col]):
-                st.write(f"{col} is already in datetime format")
-            else:
+            if not pd.api.types.is_datetime64_any_dtype(df[col]):
                 df[col] = pd.to_datetime(df[col], errors='coerce')  # Convert to datetime if not
-                st.write(f"{col} has been converted to datetime format")
 
     return df
-
 
 # Function to ask OpenAI for chart instructions
 def ask_openai_for_chart(df, user_query):
@@ -73,11 +68,11 @@ def ask_openai_for_chart(df, user_query):
     full_prompt = prompt + additional_instructions
 
     try:
-        response = openai.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[{"role": "user", "content": full_prompt}]
         )
-        code = response.choices[0].message.content
+        code = response.choices[0].message['content']
         return code
 
     except RateLimitError:
@@ -85,7 +80,6 @@ def ask_openai_for_chart(df, user_query):
     except Exception as e:
         st.error(f"An error occurred: {e}")
         return None
-
 
 # Function to clean up the generated code
 def clean_generated_code(code_str):
@@ -95,8 +89,7 @@ def clean_generated_code(code_str):
     clean_code = re.sub(r"[:,]\s*None", '', clean_code)
     return clean_code
 
-
-# Function to execute the code and generate the chart
+# Function to execute the code and generate the chart without showing it in the UI
 def execute_chart_code(code, df):
     try:
         clean_code = code.replace("```python", "")
@@ -104,13 +97,12 @@ def execute_chart_code(code, df):
         if start_index != -1:
             clean_code = clean_code[start_index:]
 
-        exec(clean_code)
+        exec(clean_code, {"df": df})
         if plt.get_fignums():
             st.pyplot(plt.gcf())
 
     except Exception as e:
         st.error(f"An error occurred while generating the chart: {e}")
-
 
 # Streamlit UI components
 st.title("AI-Generated Charts with OpenAI and Streamlit")
@@ -134,7 +126,6 @@ if uploaded_file:
             chart_code = ask_openai_for_chart(df, user_query)
             if chart_code:
                 chart_code_clean = clean_generated_code(chart_code)
-                st.code(chart_code_clean, language='python')
 
-                # Generate the chart
+                # Execute the chart without displaying the raw code
                 execute_chart_code(chart_code_clean, df)
